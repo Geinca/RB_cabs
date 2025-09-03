@@ -1,0 +1,38 @@
+:root{
+  --yellow:#FFD600;
+  --black:#000000;
+}
+
+body{ font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+
+.bg-black{ background-color: var(--black) !important; }
+.text-warning{ color: var(--yellow) !important; }
+
+.hero{
+  background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+          url('../image/hero-bg.jpg') center/cover no-repeat;
+  /* background: linear-gradient(35deg, rgba(0,0,0,0.7), rgba(0,0,0,0.7)), var(--yellow); */
+  min-height: 50vh;
+  padding: 15rem 0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.card.feature{
+  border:1px solid rgba(0,0,0,0.1);
+  border-radius: 1rem;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.card.feature:hover{ transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,.08); }
+
+.btn-warning{
+  background-color: var(--yellow);
+  border-color: var(--yellow);
+}
+.btn-warning:hover{ filter: brightness(0.95); }
+
+.btn-dark{
+  background-color: var(--black);
+  border-color: var(--black);
+}

@@ -1,0 +1,1 @@
+<?php session_start(); session_destroy(); header("Location: /cab-booking/admin/login.php"); 
