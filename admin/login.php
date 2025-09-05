@@ -11,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($res && mysqli_num_rows($res) === 1) {
     $row = mysqli_fetch_assoc($res);
     if (password_verify($password, $row['password'])) {
+      $_SESSION['admin_id'] = $row['id'];   // use admin_id for dashboard checks
       $_SESSION['admin'] = $row['username'];
       header("Location: /cab-booking/admin/dashboard.php");
       exit;
