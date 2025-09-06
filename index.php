@@ -1,37 +1,12 @@
 <?php
-session_start(); 
-include __DIR__ . "/includes/header.php"; 
+session_start();
+include __DIR__ . "/includes/header.php";
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-  $from        = trim($_POST['from'] ?? '');
-  $to          = trim($_POST['to'] ?? '');
-  $pickup_date = $_POST['pickup_date'] ?? '';
-  $pickup_time = $_POST['pickup_time'] ?? '';
-  $return_date = $_POST['return_date'] ?? '';
-  $trip_type   = $_POST['trip_type'] ?? 'oneway';
+$errors = $_SESSION['errors'] ?? [];
+$old    = $_SESSION['old'] ?? [];
 
-  $errors = [];
-
-  // Validation
-  if (empty($from)) $errors[] = "Pickup location is required.";
-  if (empty($to)) $errors[] = "Drop location is required.";
-  if (empty($pickup_date)) $errors[] = "Pick up date is required.";
-  if (empty($pickup_time)) $errors[] = "Pick up time is required.";
-
-  // If valid, store in session and go to cab listing
-  if (empty($errors)) {
-    $_SESSION['booking'] = [
-      'from'        => $from,
-      'to'          => $to,
-      'pickup_date' => $pickup_date,
-      'pickup_time' => $pickup_time,
-      'return_date' => $return_date,
-      'trip_type'   => $trip_type
-    ];
-    header("Location: ./pages/cab_listing.php");
-    exit;
-  }
-}
+// Clear after showing
+unset($_SESSION['errors'], $_SESSION['old']);
 ?>
 
 <section class="hero d-flex align-items-center min-vh-100 py-5" style="background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('assets/image/hero-bg.jpg') center/cover no-repeat fixed;">
@@ -40,7 +15,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       <div class="col-lg-10 text-center">
         <h1 class="display-4 fw-bold text-white mb-3 animate__animated animate__fadeInDown">Travel Across Cities In India</h1>
         <p class="lead text-light mb-5 animate__animated animate__fadeIn animate__delay-1s">Book your ride in seconds - Safe, Reliable, and Affordable</p>
-        
+
         <!-- Booking Form Box -->
         <div class="bg-white rounded-4 shadow-lg p-4 p-md-5 mx-auto animate__animated animate__fadeInUp animate__delay-1s" style="max-width: 1000px;">
           <!-- Booking Type Tabs -->
@@ -58,26 +33,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           </ul>
 
           <!-- Booking Form -->
-          <form id="bookingForm" class="border-0 p-0" method="POST">
+          <form id="bookingForm" class="border-0 p-0" method="POST" action="pages/form_validation.php">
             <input type="hidden" name="trip_type" id="tripType" value="oneway">
 
             <div class="row g-3 gx-4 align-items-end">
-              <div class="col-md-3">
+              <!-- From -->
+              <div class="col-md-3 position-relative">
                 <label class="form-label fw-bold text-dark mb-2">From</label>
                 <div class="input-group">
-                  <span class="input-group-text bg-light border-end-0"><i class="fas fa-map-marker-alt text-warning"></i></span>
-                  <input type="text" name="from" class="form-control border-start-0 ps-2" placeholder="Pickup Location" required>
+                  <span class="input-group-text bg-light border-end-0">
+                    <i class="fas fa-map-marker-alt text-warning"></i>
+                  </span>
+                  <input type="text" id="fromCity" name="from" class="form-control border-start-0 ps-2" placeholder="Pickup location" autocomplete="off" required>
                 </div>
+                <ul id="fromSuggestions" class="list-group position-absolute w-100" style="z-index: 1000;"></ul>
               </div>
-              
-              <div class="col-md-3">
+
+              <!-- To -->
+              <div class="col-md-3 position-relative">
                 <label class="form-label fw-bold text-dark mb-2">To</label>
                 <div class="input-group">
-                  <span class="input-group-text bg-light border-end-0"><i class="fas fa-map-marker-alt text-warning"></i></span>
-                  <input type="text" name="to" class="form-control border-start-0 ps-2" placeholder="Drop Location" required>
+                  <span class="input-group-text bg-light border-end-0">
+                    <i class="fas fa-map-marker-alt text-warning"></i>
+                  </span>
+                  <input type="text" id="toCity" name="to" class="form-control border-start-0 ps-2" placeholder="Drop Location" autocomplete="off" required>
                 </div>
+                <ul id="toSuggestions" class="list-group position-absolute w-100" style="z-index: 1000;"></ul>
               </div>
-              
+
+              <!-- Pickup Date -->
               <div class="col-md-2">
                 <label class="form-label fw-bold text-dark mb-2">Pickup Date</label>
                 <div class="input-group">
@@ -85,7 +69,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                   <input type="date" name="pickup_date" class="form-control border-start-0 ps-2" value="<?php echo date('Y-m-d'); ?>" required>
                 </div>
               </div>
-              
+
+              <!-- Pickup Time -->
               <div class="col-md-2">
                 <label class="form-label fw-bold text-dark mb-2">Pickup Time</label>
                 <div class="input-group">
@@ -93,7 +78,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                   <input type="time" name="pickup_time" class="form-control border-start-0 ps-2" value="07:00" required>
                 </div>
               </div>
-              
+
+              <!-- Return Date -->
               <div class="col-md-2 d-none" id="returnDateField">
                 <label class="form-label fw-bold text-dark mb-2">Return Date</label>
                 <div class="input-group">
@@ -103,16 +89,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
               </div>
             </div>
 
-            <!-- Show errors -->
-            <?php if (!empty($errors)): ?>
-              <div class="alert alert-danger mt-4 rounded-pill">
-                <div class="d-flex align-items-center justify-content-center">
-                  <i class="fas fa-exclamation-circle me-2"></i>
-                  <?php foreach ($errors as $error) echo "<div>$error</div>"; ?>
-                </div>
-              </div>
-            <?php endif; ?>
-
             <div class="text-center mt-4 pt-2">
               <button type="submit" class="btn btn-warning btn-lg fw-bold px-5 py-3 rounded-pill shadow">
                 <i class="fas fa-search me-2"></i>FIND CABS NOW
@@ -120,6 +96,62 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
           </form>
         </div>
+
+        <!-- JS for Autocomplete -->
+        <script>
+          let cities = [];
+
+          // Load JSON of cities
+          fetch('assets/js/cities-name-list.json')
+            .then(res => res.json())
+            .then(data => {
+              // If it's an array of objects like [{ "name": "Mumbai" }...]
+              if (Array.isArray(data) && typeof data[0] === 'object' && data[0].name) {
+                cities = data.map(c => c.name);
+              }
+              // If it's already ["Mumbai","Delhi",...]
+              else if (Array.isArray(data) && typeof data[0] === 'string') {
+                cities = data;
+              }
+            })
+            .catch(err => console.error("Error loading cities JSON:", err));
+
+          function setupAutocomplete(inputId, suggestionId) {
+            const input = document.getElementById(inputId);
+            const suggestionBox = document.getElementById(suggestionId);
+
+            input.addEventListener('input', () => {
+              const val = input.value.toLowerCase();
+              suggestionBox.innerHTML = '';
+              if (val.length < 2) return;
+
+              const matches = cities
+                .filter(name => name.toLowerCase().startsWith(val))
+                .slice(0, 8);
+
+              matches.forEach(name => {
+                const li = document.createElement('li');
+                li.classList.add('list-group-item', 'list-group-item-action');
+                li.textContent = name;
+                li.onclick = () => {
+                  input.value = name;
+                  suggestionBox.innerHTML = '';
+                };
+                suggestionBox.appendChild(li);
+              });
+            });
+
+            input.addEventListener('blur', () => setTimeout(() => suggestionBox.innerHTML = '', 200));
+          }
+
+          // Initialize autocomplete for both fields
+          document.addEventListener('DOMContentLoaded', () => {
+            setupAutocomplete('fromCity', 'fromSuggestions');
+            setupAutocomplete('toCity', 'toSuggestions');
+          });
+        </script>
+
+
       </div>
     </div>
   </div>
@@ -130,40 +162,41 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     position: relative;
     overflow: hidden;
   }
-  
+
   .nav-pills .nav-link.active {
     background: linear-gradient(135deg, #FFD600 0%, #FFA000 100%);
     color: white !important;
     box-shadow: 0 4px 15px rgba(255, 214, 0, 0.4);
     border: none;
   }
-  
+
   .nav-pills .nav-link {
     color: #333;
     background: #f8f9fa;
     transition: all 0.3s ease;
   }
-  
+
   .nav-pills .nav-link:hover {
     transform: translateY(-2px);
   }
-  
-  .form-control, .input-group-text {
+
+  .form-control,
+  .input-group-text {
     height: 50px;
     border-radius: 12px !important;
   }
-  
+
   .form-control:focus {
     border-color: #FFD600;
     box-shadow: 0 0 0 0.25rem rgba(255, 214, 0, 0.25);
   }
-  
+
   .btn-warning {
     background: linear-gradient(135deg, #FFD600 0%, #FFA000 100%);
     border: none;
     transition: all 0.3s ease;
   }
-  
+
   .btn-warning:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 20px rgba(255, 214, 0, 0.4);
@@ -180,8 +213,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         document.querySelectorAll('[data-trip]').forEach(t => t.classList.remove('active'));
         this.classList.add('active');
         document.getElementById('tripType').value = this.dataset.trip;
-        
-        if(this.dataset.trip === 'roundtrip') {
+
+        if (this.dataset.trip === 'roundtrip') {
           document.getElementById('returnDateField').classList.remove('d-none');
         } else {
           document.getElementById('returnDateField').classList.add('d-none');
@@ -197,7 +230,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       <h2 class="display-5 fw-bold mb-3">Our Services</h2>
       <p class="lead text-muted">Choose the perfect ride for your journey</p>
     </div>
-    
+
     <div class="row g-4 justify-content-center">
       <div class="col-lg-4 col-md-6">
         <div class="card feature-card h-100 border-0 shadow-sm hover-effect">
@@ -213,7 +246,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           </div>
         </div>
       </div>
-      
+
       <div class="col-lg-4 col-md-6">
         <div class="card feature-card h-100 border-0 shadow-sm hover-effect">
           <div class="card-body text-center p-4 p-lg-5">
@@ -228,7 +261,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           </div>
         </div>
       </div>
-      
+
       <div class="col-lg-4 col-md-6">
         <div class="card feature-card h-100 border-0 shadow-sm hover-effect">
           <div class="card-body text-center p-4 p-lg-5">
@@ -253,7 +286,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       <h2 class="display-5 fw-bold mb-3">Popular Car Types</h2>
       <p class="lead text-muted">Select the perfect vehicle for your needs</p>
     </div>
-    
+
     <div class="row g-4">
       <div class="col-lg-3 col-md-6">
         <div class="card car-card h-100 border-0 shadow-sm hover-effect">
@@ -275,7 +308,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           </div>
         </div>
       </div>
-      
+
       <div class="col-lg-3 col-md-6">
         <div class="card car-card h-100 border-0 shadow-sm hover-effect">
           <div class="card-body p-4">
@@ -296,7 +329,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           </div>
         </div>
       </div>
-      
+
       <div class="col-lg-3 col-md-6">
         <div class="card car-card h-100 border-0 shadow-sm hover-effect">
           <div class="card-body p-4">
@@ -317,7 +350,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           </div>
         </div>
       </div>
-      
+
       <div class="col-lg-3 col-md-6">
         <div class="card car-card h-100 border-0 shadow-sm hover-effect">
           <div class="card-body p-4">
@@ -344,17 +377,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <style>
   /* Custom Styles */
-  .feature-card, .car-card {
+  .feature-card,
+  .car-card {
     transition: all 0.3s ease;
     border-radius: 16px;
     overflow: hidden;
   }
-  
+
   .hover-effect:hover {
     transform: translateY(-8px);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
   }
-  
+
   .icon-wrapper {
     width: 80px;
     height: 80px;
@@ -362,22 +396,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     align-items: center;
     justify-content: center;
   }
-  
+
   .card-title {
     color: #212529;
   }
-  
+
   .btn-warning {
     background-color: #FFD600;
     border-color: #FFD600;
     font-weight: 600;
   }
-  
+
   .btn-warning:hover {
     background-color: #FFC107;
     border-color: #FFC107;
   }
-  
+
   .bg-light {
     background-color: #f8f9fa !important;
   }
