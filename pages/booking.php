@@ -40,8 +40,8 @@ if ($car_id) {
     $car_type = $car['name'];
     $rate     = $car['rate_per_km'];
 
-    // Example distance (in real app calculate via API)
-    $distance = ($trip_type === 'roundtrip') ? 240 : 120;
+    // ✅ Use calculated distance from session (live / haversine / fallback)
+    $distance = $_SESSION['trip']['distance'] ?? 0;
 
     $fare = $distance * $rate;
   }
@@ -96,7 +96,14 @@ if ($car_id) {
           </div>
 
           <div class="d-grid mt-4">
-            <button type="button" id="proceedBtn" class="btn btn-warning fw-bold">PROCEED</button>
+            <?php if (!isset($_SESSION['user_id'])): ?>
+              <?php $_SESSION['redirect_after_login'] = "confirm_booking.php"; ?>
+              <button type="button" id="proceedBtn" class="btn btn-warning fw-bold">PROCEED</button>
+            <?php else: ?>
+              <form action="confirm_booking.php" method="POST">
+                <button type="submit" class="btn btn-success fw-bold">CONFIRM BOOKING</button>
+              </form>
+            <?php endif; ?>
           </div>
         </form>
       </div>
@@ -155,29 +162,44 @@ if ($car_id) {
   <div class="auth-modal">
     <span class="close-btn" id="closeAuthModal">&times;</span>
 
-    <!-- OTP Login -->
-    <div class="auth-form active" id="otpLogin">
-      <h3>Login with Mobile OTP</h3>
-
-      <!-- Step Indicator -->
-      <div class="step-indicator" style="margin-bottom:10px; font-weight:bold;">
-        <span id="step1" style="color:#FFD600;">Step 1: Enter Mobile</span> →
-        <span id="step2" style="color:#000;">Step 2: Verify OTP</span>
+    <!-- Auth Modal with Tabs -->
+    <div class="auth-form active" id="authModal">
+      <!-- Tab Buttons -->
+      <div class="d-flex justify-content-around mb-3">
+        <button type="button" class="tab-btn active" data-target="#loginTab">Login</button>
+        <button type="button" class="tab-btn" data-target="#signupTab">Sign Up</button>
       </div>
 
-      <!-- Step 1: Send OTP -->
-      <form id="otpSendForm">
-        <input type="tel" name="otp_mobile" placeholder="Enter your Mobile Number"
-          pattern="^[6-9]\d{9}$" title="Enter a valid 10-digit mobile number" required>
-        <button type="submit" class="auth-btn">Send OTP</button>
-      </form>
+      <!-- Login Form -->
+      <div id="loginTab" class="tab-content active">
+        <h3 class="mb-3">Login with Email</h3>
+        <form method="POST" action="login_process.php">
+          <div class="mb-3">
+            <input type="email" name="email" placeholder="Enter your Email" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <input type="password" name="password" placeholder="Enter your Password" class="form-control" required>
+          </div>
+          <button type="submit" class="auth-btn w-100">Login</button>
+        </form>
+      </div>
 
-      <!-- Step 2: Verify OTP (hidden initially) -->
-      <form id="otpVerifyForm" method="POST" action="verify_otp.php" style="margin-top:10px; display:none;">
-        <input type="text" name="otp_code" placeholder="Enter OTP"
-          pattern="^\d{6}$" title="OTP must be 6 digits" required>
-        <button type="submit" class="auth-btn">Verify OTP</button>
-      </form>
+      <!-- Sign Up Form -->
+      <div id="signupTab" class="tab-content">
+        <h3 class="mb-3">Create Account</h3>
+        <form method="POST" action="signup_process.php">
+          <div class="mb-3">
+            <input type="text" name="name" placeholder="Full Name" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <input type="email" name="email" placeholder="Enter your Email" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <input type="password" name="password" placeholder="Create Password" class="form-control" required>
+          </div>
+          <button type="submit" class="auth-btn w-100">Sign Up</button>
+        </form>
+      </div>
     </div>
   </div>
 </div>
@@ -230,6 +252,28 @@ if ($car_id) {
     color: #FFD600;
     border: 1px solid #FFD600;
   }
+
+  .tab-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: #f8f9fa;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .tab-btn.active {
+    background: #ffc107;
+    color: #000;
+  }
+
+  .tab-content {
+    display: none;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
 </style>
 
 <!-- JavaScript -->
@@ -244,60 +288,16 @@ if ($car_id) {
     }
   });
 
-  // Step 1: Send OTP → Switch to Step 2
-  document.getElementById("otpSendForm").addEventListener("submit", function(e) {
-    e.preventDefault(); // prevent normal form submit
-
-    let mobile = this.otp_mobile.value;
-
-    // Send mobile to backend (send_otp.php)
-    fetch("send_otp.php", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: "otp_mobile=" + encodeURIComponent(mobile)
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === "success") {
-          alert("OTP sent successfully!");
-          document.getElementById("otpSendForm").style.display = "none";
-          document.getElementById("otpVerifyForm").style.display = "block";
-          document.getElementById("step1").style.color = "#000";
-          document.getElementById("step2").style.color = "#FFD600";
-        } else {
-          alert("Failed to send OTP: " + data.message);
-        }
-      })
-      .catch(err => alert("Error: " + err));
-  });
-
-  // Step 2: Verify OTP Validation
-  document.getElementById("otpVerifyForm").addEventListener("submit", function(e) {
-    e.preventDefault();
-
-    const formData = new FormData(this);
-
-    fetch("verify_otp.php", {
-        method: "POST",
-        body: formData
-      })
-      .then(res => res.text())
-      .then(data => {
-        console.log("Verify response:", data);
-        alert(data); // show result
-
-        if (data.includes("Success")) {
-          // Close modal & refresh page or redirect
-          document.getElementById("authOverlay").style.display = "none";
-          window.location.reload(); // or redirect to dashboard
-        }
-      })
-      .catch(err => {
-        console.error("Error verifying OTP:", err);
-        alert("Failed to verify OTP. Try again.");
-      });
+  // tab switching script
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      // remove active from all
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+      // activate clicked tab
+      btn.classList.add("active");
+      document.querySelector(btn.dataset.target).classList.add("active");
+    });
   });
 
   // Close Modal
