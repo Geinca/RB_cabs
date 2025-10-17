@@ -20,7 +20,6 @@ $pickup_time  = $booking['pickup_time'] ?? '';
 $return_date  = $booking['return_date'] ?? '';
 $trip_type    = $booking['trip_type']   ?? 'oneway';
 
-
 // --- Distance Calculation with OpenRouteService API ---
 $ors_api_key = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjgwNzFkYzk5MmM0MzQ5ZTRhNzMzYTlmMzJhZmQyOThlIiwiaCI6Im11cm11cjY0In0%3D"; // Your ORS API key
 
@@ -160,7 +159,6 @@ if ($distance_meters !== null) {
   }
 }
 
-
 // Save trip details into SESSION
 $_SESSION['trip'] = [
   'from'       => $pickup,
@@ -182,40 +180,181 @@ $result = $conn->query($sql);
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Select Car</title>
+  <title>Select Car | Premium Cab Service</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="style.css">
   <style>
     :root {
-      --primary: #FFA500;
-      --secondary: #00a859;
-      --dark: #212529;
-      --light: #f8f9fa;
+      --primary: #EC8B24;
+      --primary-dark: #1d4ed8;
+      --secondary: #059669;
+      --accent: #f59e0b;
+      --dark: #1f2937;
+      --light: #f8fafc;
+      --gray: #6b7280;
+      --gray-light: #e5e7eb;
     }
 
-    .car-card {
-      border-radius: 12px;
-      padding: 20px;
+    body {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+    }
+
+    .container-main {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 3rem;
+      padding-top: 2rem;
+    }
+
+    .page-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--dark);
+      margin-bottom: 0.5rem;
+      background: #EC8B24;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .page-subtitle {
+      color: var(--gray);
+      font-size: 1.1rem;
+    }
+
+    .trip-summary-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border-radius: 20px;
+      padding: 2rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+    }
+
+    .trip-route {
       display: flex;
       align-items: center;
-      background: #fff;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      transition: all 0.3s ease;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .location-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+
+    .dot-start { background: var(--primary); }
+    .dot-end { background: var(--secondary); }
+
+    .location-text {
+      font-weight: 600;
+      color: var(--dark);
+      font-size: 1.1rem;
+    }
+
+    .route-arrow {
+      margin: 0 1.5rem;
+      color: var(--gray);
+    }
+
+    .trip-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .meta-item {
+      text-align: center;
+      padding: 1rem;
+      background: var(--light);
+      border-radius: 12px;
       border-left: 4px solid var(--primary);
     }
 
+    .meta-label {
+      font-size: 0.85rem;
+      color: var(--gray);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.25rem;
+    }
+
+    .meta-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .cars-grid {
+      display: grid;
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .car-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border-radius: 20px;
+      padding: 2rem;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .car-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+    }
+
     .car-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+      transform: translateY(-8px);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+    }
+
+    .car-image-container {
+      position: relative;
+      margin-right: 2rem;
+      flex-shrink: 0;
     }
 
     .car-image {
-      width: 140px;
-      height: 100px;
+      width: 180px;
+      height: 120px;
       object-fit: cover;
-      border-radius: 8px;
-      margin-right: 20px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .car-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: var(--accent);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
     }
 
     .car-details {
@@ -223,279 +362,334 @@ $result = $conn->query($sql);
     }
 
     .car-title {
-      font-weight: 700;
+      font-size: 1.4rem;
+      font-weight: 800;
       color: var(--dark);
-      margin-bottom: 5px;
+      margin-bottom: 0.5rem;
+    }
+
+    .car-features {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .car-feature {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      color: var(--gray);
+    }
+
+    .feature-icon {
+      color: var(--primary);
+      width: 16px;
     }
 
     .car-description {
-      color: #6c757d;
-      font-size: 0.9rem;
-      margin-bottom: 10px;
+      color: var(--gray);
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin-bottom: 1rem;
+    }
+
+    .car-price-section {
+      text-align: right;
+      margin-left: 2rem;
+      flex-shrink: 0;
     }
 
     .car-price {
+      font-size: 2rem;
+      font-weight: 800;
       color: var(--secondary);
-      font-weight: 700;
-      font-size: 1.5rem;
-      margin-bottom: 5px;
+      margin-bottom: 0.25rem;
+      line-height: 1;
     }
 
     .car-rate {
-      font-size: 0.85rem;
-      color: #6c757d;
+      font-size: 0.9rem;
+      color: var(--gray);
+      margin-bottom: 1rem;
     }
 
     .btn-select {
-      background: var(--primary);
+      background: #EC8B24;
       color: white;
-      font-weight: 600;
-      padding: 10px 25px;
-      border-radius: 8px;
+      font-weight: 700;
+      padding: 12px 32px;
+      border-radius: 12px;
       border: none;
       transition: all 0.3s ease;
-      white-space: nowrap;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
     }
 
     .btn-select:hover {
-      background: #e69500;
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(255, 165, 0, 0.3);
+      box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
+      color: white;
     }
 
-    .trip-details {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 30px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .car-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 1.5rem;
+      }
+
+      .car-image-container {
+        margin-right: 0;
+        margin-bottom: 1.5rem;
+      }
+
+      .car-image {
+        width: 100%;
+        max-width: 280px;
+        height: 160px;
+      }
+
+      .car-features {
+        justify-content: center;
+      }
+
+      .car-price-section {
+        margin-left: 0;
+        margin-top: 1rem;
+        text-align: center;
+      }
+
+      .trip-route {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .route-arrow {
+        transform: rotate(90deg);
+        margin: 0.5rem 0;
+      }
+
+      .page-title {
+        font-size: 2rem;
+      }
+
+      .trip-meta-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
     }
 
-    .trip-details span {
+    /* Enhanced Preloader */
+    #preloader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, var(--light) 0%, #ffffff 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.8s ease, visibility 0.8s ease;
+    }
+
+    .preloader-content {
+      text-align: center;
+    }
+
+    .luxury-loader {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 2rem;
+    }
+
+    .loader-ring {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border: 3px solid transparent;
+      border-top: 3px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1.5s linear infinite;
+    }
+
+    .loader-ring:nth-child(2) {
+      border-top: 3px solid var(--secondary);
+      animation-delay: 0.3s;
+    }
+
+    .loader-ring:nth-child(3) {
+      border-top: 3px solid var(--accent);
+      animation-delay: 0.6s;
+    }
+
+    .loader-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2rem;
+      color: var(--primary);
+    }
+
+    .loading-text {
       font-weight: 600;
       color: var(--dark);
+      font-size: 1.1rem;
+      animation: pulse 1.5s infinite;
     }
 
-    .section-title {
-      font-weight: 700;
-      color: var(--dark);
-      margin-bottom: 25px;
-      position: relative;
-      padding-bottom: 10px;
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
 
-    .section-title::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 60px;
-      height: 3px;
-      background: var(--primary);
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    #preloader.fade-out {
+      opacity: 0;
+      visibility: hidden;
     }
   </style>
 </head>
 
-<body class="bg-light">
-
-  <div class="container py-5">
-    <h2 class="section-title">Available Cabs</h2>
-
-    <div class="trip-details mb-4">
-      <div class="row">
-        <div class="col-md-4 mb-2 mb-md-0">
-          <span>From:</span> <?= htmlspecialchars($pickup) ?>
-        </div>
-        <div class="col-md-4 mb-2 mb-md-0">
-          <span>To:</span> <?= htmlspecialchars($drop) ?>
-        </div>
-        <div class="col-md-4">
-          <span>Trip Type:</span> <?= ucfirst($trip_type) ?>
+<body>
+  <!-- Enhanced Preloader -->
+  <div id="preloader">
+    <div class="preloader-content">
+      <div class="luxury-loader">
+        <div class="loader-ring"></div>
+        <div class="loader-ring"></div>
+        <div class="loader-ring"></div>
+        <div class="loader-icon">
+          <i class="fas fa-car"></i>
         </div>
       </div>
-      <div class="row mt-3">
-        <div class="col-md-4 mb-2 mb-md-0">
-          <span>Date:</span> <?= htmlspecialchars($pickup_date) ?>
+      <div class="loading-text">Curating Premium Rides For You...</div>
+    </div>
+  </div>
+
+  <div class="container container-main">
+    <div class="page-header">
+      <h1 class="page-title">Select Your Premium Ride</h1>
+      <p class="page-subtitle">Experience luxury and comfort with our premium fleet</p>
+    </div>
+
+    <!-- Trip Summary Card -->
+    <div class="trip-summary-card">
+      <div class="trip-route">
+        <div class="d-flex align-items-center">
+          <div class="location-dot dot-start"></div>
+          <div class="location-text"><?= htmlspecialchars($pickup) ?></div>
         </div>
-        <div class="col-md-4 mb-2 mb-md-0">
-          <span>Time:</span> <?= htmlspecialchars($pickup_time) ?>
+        <div class="route-arrow">
+          <i class="fas fa-arrow-right fa-lg"></i>
         </div>
-        <div class="col-md-4">
-          <span>Distance:</span> <?= $distance_km ?> km
+        <div class="d-flex align-items-center">
+          <div class="location-dot dot-end"></div>
+          <div class="location-text"><?= htmlspecialchars($drop) ?></div>
+        </div>
+      </div>
+      
+      <div class="trip-meta-grid">
+        <div class="meta-item">
+          <div class="meta-label">Trip Type</div>
+          <div class="meta-value"><?= ucfirst($trip_type) ?></div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Pickup Date</div>
+          <div class="meta-value"><?= htmlspecialchars($pickup_date) ?></div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Pickup Time</div>
+          <div class="meta-value"><?= htmlspecialchars($pickup_time) ?></div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Total Distance</div>
+          <div class="meta-value"><?= $distance_km ?> km</div>
         </div>
       </div>
     </div>
 
-    <?php while ($row = $result->fetch_assoc()):
-      $total_price = $distance_km * $row['rate_per_km']; ?>
-      <div class="car-card">
-        <img src="../assets/uploads/<?= htmlspecialchars($row['image']) ?>"
-          alt="<?= htmlspecialchars($row['name']) ?>"
-          class="car-image">
-        <div class="car-details">
-          <h5 class="car-title"><?= htmlspecialchars($row['name']) ?></h5>
-          <p class="car-description"><?= htmlspecialchars($row['details']) ?></p>
-          <div class="car-price">₹<?= number_format($total_price, 2) ?></div>
-          <div class="car-rate">₹<?= htmlspecialchars($row['rate_per_km']) ?> / km | up to <?= htmlspecialchars($row['distance_limit']) ?> km</div>
+    <!-- Available Cars Grid -->
+    <div class="cars-grid">
+      <?php while ($row = $result->fetch_assoc()):
+        $total_price = $distance_km * $row['rate_per_km']; ?>
+        <div class="car-card">
+          <div class="car-image-container">
+            <img src="../assets/uploads/<?= htmlspecialchars($row['image']) ?>"
+                 alt="<?= htmlspecialchars($row['name']) ?>"
+                 class="car-image">
+            <div class="car-badge">PREMIUM</div>
+          </div>
+          
+          <div class="car-details">
+            <h3 class="car-title"><?= htmlspecialchars($row['name']) ?></h3>
+            
+            <div class="car-features">
+              <div class="car-feature">
+                <i class="fas fa-users feature-icon"></i>
+                <span>4 Passengers</span>
+              </div>
+              <div class="car-feature">
+                <i class="fas fa-suitcase feature-icon"></i>
+                <span>2 Luggage</span>
+              </div>
+              <div class="car-feature">
+                <i class="fas fa-snowflake feature-icon"></i>
+                <span>AC</span>
+              </div>
+            </div>
+            
+            <p class="car-description"><?= htmlspecialchars($row['details']) ?></p>
+          </div>
+          
+          <div class="car-price-section">
+            <div class="car-price">₹<?= number_format($total_price, 2) ?></div>
+            <div class="car-rate">₹<?= htmlspecialchars($row['rate_per_km']) ?> / km</div>
+            <a href="booking.php?car_id=<?= $row['id'] ?>&trip_type=<?= urlencode($trip_type) ?>"
+               class="btn btn-select">
+              <i class="fas fa-check-circle me-2"></i>Select Ride
+            </a>
+          </div>
         </div>
-        <a href="booking.php?car_id=<?= $row['id'] ?>&trip_type=<?= urlencode($trip_type) ?>"
-          class="btn btn-select">
-          Select Cab
-        </a>
-      </div>
-    <?php endwhile; ?>
+      <?php endwhile; ?>
+    </div>
   </div>
 
   <?php include __DIR__ . "/../includes/footer.php"; ?>
+
+  <script>
+    // Enhanced Preloader
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        const preloader = document.getElementById('preloader');
+        if (preloader) {
+          preloader.classList.add('fade-out');
+          setTimeout(() => preloader.remove(), 800);
+        }
+      }, 1000);
+    });
+
+    // Add smooth animations to cards
+    document.addEventListener('DOMContentLoaded', function() {
+      const cards = document.querySelectorAll('.car-card');
+      cards.forEach((card, index) => {
+        card.style.animationDelay = `${index * 0.1}s`;
+      });
+    });
+  </script>
 </body>
-
-<!-- Enhanced Preloader -->
-<div id="preloader">
-  <div class="preloader-content">
-    <div class="taxi-animation">
-      <div class="taxi">
-        <div class="taxi-body"></div>
-        <div class="taxi-light"></div>
-      </div>
-      <div class="road"></div>
-    </div>
-    <div class="loading-text">Finding the best cabs for you...</div>
-  </div>
-</div>
-
-<style>
-  /* Enhanced Preloader Styles */
-  #preloader {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    transition: opacity 0.8s ease, visibility 0.8s ease;
-  }
-
-  .preloader-content {
-    text-align: center;
-  }
-
-  .taxi-animation {
-    position: relative;
-    width: 300px;
-    height: 100px;
-    margin: 0 auto 20px;
-  }
-
-  .taxi {
-    position: absolute;
-    width: 100px;
-    height: 50px;
-    left: -100px;
-    animation: drive 2s ease-in-out infinite;
-  }
-
-  .taxi-body {
-    width: 100%;
-    height: 100%;
-    background: #FFD700;
-    border-radius: 10px 10px 0 0;
-    position: relative;
-  }
-
-  .taxi-body::before {
-    content: '';
-    position: absolute;
-    width: 80%;
-    height: 30px;
-    background: #FFA500;
-    top: 10px;
-    left: 10%;
-    border-radius: 5px;
-  }
-
-  .taxi-light {
-    position: absolute;
-    width: 10px;
-    height: 5px;
-    background: #FFA500;
-    top: 20px;
-    right: -5px;
-    border-radius: 50% 0 0 50%;
-    animation: light 0.5s alternate infinite;
-  }
-
-  .road {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    height: 4px;
-    background: repeating-linear-gradient(to right,
-        #333 0,
-        #333 20px,
-        transparent 20px,
-        transparent 40px);
-  }
-
-  .loading-text {
-    font-weight: 600;
-    color: #333;
-    font-size: 1.1rem;
-    animation: pulse 1.5s infinite;
-  }
-
-  @keyframes drive {
-    0% {
-      left: -100px;
-    }
-
-    100% {
-      left: 300px;
-    }
-  }
-
-  @keyframes light {
-    0% {
-      opacity: 0.5;
-    }
-
-    100% {
-      opacity: 1;
-    }
-  }
-
-  @keyframes pulse {
-    0% {
-      opacity: 0.7;
-    }
-
-    50% {
-      opacity: 1;
-    }
-
-    100% {
-      opacity: 0.7;
-    }
-  }
-
-  #preloader.fade-out {
-    opacity: 0;
-    visibility: hidden;
-  }
-</style>
-
-<script>
-  // Preloader fade out when page loads
-  window.addEventListener('load', function() {
-    setTimeout(function() {
-      document.getElementById('preloader').classList.add('fade-out');
-    }, 1000);
-  });
-</script>
-
 </html>
 <?php
 $conn->close();
